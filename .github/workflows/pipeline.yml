@@ -1,5 +1,8 @@
 name: AWS pipeline
 
+permissions:
+   id-token: write
+   contents: read
 on:
   push:
   pull_request:
@@ -17,6 +20,13 @@ jobs:
     steps:
       - name: Terraform checkout
         uses: actions/checkout@v4
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::132025996459:role/Github-Actions-OIDC-Role
+          aws-region: eu-central-1
+
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
