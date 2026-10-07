@@ -207,7 +207,7 @@ resource "aws_lb_listener" "rjnoord-listener" {
   }
 }
 
-resource "aws_ec2_instance" "rjnoord-ec2" {
+resource "aws_instance" "rjnoord-ec2" {
   ami                    = "ami-0c55b159cbfafe1f0"
   instance_type          = "t3.large"
   subnet_id              = var.subnet_private_1a
