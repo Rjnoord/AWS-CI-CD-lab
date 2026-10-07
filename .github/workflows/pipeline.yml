@@ -10,7 +10,6 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: terraform
@@ -52,8 +51,6 @@ jobs:
 
       - name: Build docker image
         run: docker build -t my-image:latest .
-
-
       - name: verify docker image
         run: docker images
         
