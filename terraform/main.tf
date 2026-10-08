@@ -8,7 +8,7 @@ resource "aws_vpc" "rjnoord-aws-practice-lab-vpc" {
 resource "aws_subnet" "public-subnet-a" {
   vpc_id            = var.vpc
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
+  availability_zone = "us-east-2a"
   tags = {
     Name = "rjnoord-subnet-public-2"
   }
@@ -17,7 +17,7 @@ resource "aws_subnet" "public-subnet-a" {
 resource "aws_subnet" "private-subnet-a" {
   vpc_id            = var.vpc
   cidr_block        = "10.0.2.0/24"
-  availability_zone = "us-east-1a"
+  availability_zone = "us-east-2a"
   tags = {
     Name = "rjnoord-subnet-private-2"
   }
@@ -26,7 +26,7 @@ resource "aws_subnet" "private-subnet-a" {
 resource "aws_subnet" "public-subnet-b" {
   vpc_id            = var.vpc
   cidr_block        = "10.0.3.0/24"
-  availability_zone = "us-east-1b"
+  availability_zone = "us-east-2b"
   tags = {
     Name = "rjnoord-subnet-public-3"
   }
@@ -36,7 +36,7 @@ resource "aws_subnet" "public-subnet-b" {
 resource "aws_subnet" "private-subnet-b" {
   vpc_id            = var.vpc
   cidr_block        = "10.0.4.0/24"
-  availability_zone = "us-east-1b"
+  availability_zone = "us-east-2b"
   tags = {
     Name = "rjnoord-subnet-private-3"
   }
@@ -219,14 +219,16 @@ resource "aws_instance" "rjnoord-ec2" {
 
 }
 
-resource aws_ecr_repository "rjnoord-ecr" {
-  name = "rjnoord-ecr-app"
+resource "aws_ecr_repository" "rjnoord-ecr" {
+  name                 = "rjnoord-ecr-app"
   image_tag_mutability = "MUTABLE"
-    image_scanning_configuration {
-        scan_on_push = true
-}
-tags = {
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+  tags = {
     Name = "rjnoord-ecr-app"
   }
 }
+
+
 
