@@ -216,4 +216,17 @@ resource "aws_instance" "rjnoord-ec2" {
   tags = {
     Name = "rjnoord-ec2"
   }
+
 }
+
+resource aws_ecr_repository "rjnoord-ecr" {
+  name = "rjnoord-ecr-app"
+  image_tag_mutability = "MUTABLE"
+    image_scanning_configuration {
+        scan_on_push = true
+}
+tags = {
+    Name = "rjnoord-ecr-app"
+  }
+}
+
