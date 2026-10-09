@@ -80,4 +80,21 @@ jobs:
 
       - name: verify docker image
         run: docker images
-        
+  deploy:
+    runs-on: ubuntu-latest
+    needs: docker
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::132025996459:role/Github-Actions-OIDC-Role
+          aws-region: us-east-2
+      - name: Deploy to ECS
+        run: |
+          aws ecs describe-task-definition --task-definition rjnoord-task > task-def.json
+          sed -i 's|<IMAGE_URI>|'${{ steps.ecr-login.outputs.registry }}/rjnoord-ecr-app:${{ github.sha }}'|g' task-def.json
+          aws ecs register-task-definition --cli-input-json file://task-def.json
+          aws ecs update-service --cluster rjnoord-cluster --service rjnoord-service --force-new-deployment

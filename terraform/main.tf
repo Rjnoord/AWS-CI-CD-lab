@@ -145,6 +145,12 @@ resource "aws_security_group" "rjnoord-alb-sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
     from_port   = 0
@@ -191,7 +197,7 @@ resource "aws_lb" "rjnoord-alb" {
 
 resource "aws_lb_target_group" "rjnoord-tg" {
   name     = "rjnoord-tg"
-  port     = 80
+  port     = 3000
   protocol = "HTTP"
   vpc_id   = aws_vpc.rjnoord-aws-practice-lab-vpc.id
 }
@@ -230,5 +236,76 @@ resource "aws_ecr_repository" "rjnoord-ecr" {
   }
 }
 
+resource "aws_ecs_cluster" "rjnoord_cluster" {
+  name = "rjnoord-cluster"
 
+  tags = {
+    Environment = "lab"
+  }
+}
+
+resource "aws_ecs_task_definition" "rjnoord-task-definition" {
+
+  family                   = "rjnoord-ecr-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  task_role_arn            = aws_iam_role.rjnoord-ecs-task-role.arn
+  execution_role_arn       = aws_iam_role.rjnoord-ecs-execution-role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "rjnoord-ecr-app"
+      image     = "${aws_ecr_repository.rjnoord-ecr.repository_url}:latest"
+      essential = true
+      portMappings = [
+        {
+          containerPort = 3000
+          hostPort      = 3000
+          protocol      = "tcp"
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "rjnoord-ecs-service" {
+  name            = "rjnoord-ecs-service"
+  cluster         = aws_ecs_cluster.rjnoord_cluster.id
+  task_definition = aws_ecs_task_definition.rjnoord-task-definition.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [var.subnet_private_1a, var.subnet_private_1b]
+    security_groups  = [aws_security_group.rjnoord-sg-2.id]
+    assign_public_ip = true
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.rjnoord-tg.arn
+    container_name   = "rjnoord-ecr-app"
+    container_port   = 3000
+  }
+
+  depends_on = [aws_lb_listener.rjnoord-listener]
+}
+
+resource "aws_iam_role" "rjnoord-ecs-task-role" {
+  name = "rjnoord-ecs-task-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
 
