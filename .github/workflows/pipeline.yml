@@ -92,9 +92,25 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::132025996459:role/Github-Actions-OIDC-Role
           aws-region: us-east-2
-      - name: Deploy to ECS
+      
+      - name: Download ECS task definition
         run: |
-          aws ecs describe-task-definition --task-definition rjnoord-task > task-def.json
-          sed -i 's|<IMAGE_URI>|'${{ steps.ecr-login.outputs.registry }}/rjnoord-ecr-app:${{ github.sha }}'|g' task-def.json
-          aws ecs register-task-definition --cli-input-json file://task-def.json
-          aws ecs update-service --cluster rjnoord-cluster --service rjnoord-service --force-new-deployment
+          aws ecs describe-task-definition \
+            --task-definition rjnoord-task \
+            --query taskDefinition > task-definition.json
+
+      - name: Render ECS task definition
+        id: render-task
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: rjnoord-ecr-app
+          image: 132025996459.dkr.ecr.us-east-2.amazonaws.com/rjnoord-ecr-app:${{ github.sha }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task.outputs.task-definition }}
+          cluster: rjnoord-cluster
+          service: rjnoord-service
+          wait-for-service-stability: true
